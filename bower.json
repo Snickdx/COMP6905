@@ -16,6 +16,9 @@
   ],
   "dependencies": {
     "angular": "^1.5.8",
-    "moment": "^2.15.2"
+    "moment": "^2.15.2",
+    "angularfire": "^2.1.0",
+    "firebase": "^3.5.2",
+    "angular-toastr": "^2.1.1"
   }
 }

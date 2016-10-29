@@ -3,7 +3,7 @@
 
     var app = angular.module('myApp', ['firebase', 'toastr']);
 
-    var HOST = "http://a2backend";
+    var HOST = "http://snickdx.me/A2Backend/index.php";
 
     app.config(function(toastrConfig) {
         angular.extend(toastrConfig, {
@@ -31,6 +31,18 @@
         firebase.initializeApp(config);
 
         var db = firebase.database();
+
+        $scope.users = [
+            "John",
+            "Bill",
+            "Jake"
+        ];
+
+        $scope.companies = [
+            "Harambe Ltd.",
+            "Hugh Mungus Co.",
+            "Photo Mart"
+        ];
 
         $scope.input = {
             user : "John",

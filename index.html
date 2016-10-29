@@ -46,53 +46,77 @@
     </div>
     <div class="container">
         <h2>View Update Scheme</h2>
-        <p>The view updates right before and after data is sent to the database. As the view contains data which would enable further actions to affect the state of the application, the view must be synced with the database.</p>
+        <p>
+            Any request by a client that affects the state of the application is sent a PHP server that writes the event to azure storage. Upon it successful completion the server then updates the view accordingly.
+            Because the view is stored in firebase and synced with the UI, any change to the view is immediately reflected on all clients copy of the view in memory. Views can also be reconstructed with the application
+            state by having the PHP server initialize the state and read through the event logs and applying each change until the view is up to date.
+        </p>
+        <img class="img-responsive" src="img/scheme.png" alt="scheme">
     </div>
     <div class="container">
         <h2>Materialized View Implementation</h2>
-        <p>The view updates right before and after data is sent to the database. As the view contains data which would enable further actions to affect the state of the application, the view must be synced with the database.</p>
+        <p>The view is implemented in a firebase database and is kept in sync within the memory of the front end application. The structure is as follows:</p>
+        <pre>
+            | User | Company      | Timestamp |Status     |
+            |------|--------------|-----------|---------- |
+            | John | Harambe Ltd  | 128123243 | sent      |
+            | Bill | Fotomart Inc | 213434234 | sent      |
+            | Bill | Fotomart Inc | 213434234 | cancelled |
+            | Bill | Fotomart Inc | 213434234 | cancelled |
+            | Bill | Fotomart Inc | 213434234 | accepted  |
+        </pre>
+
     </div>
     <div class="container">
         <h2>Eventual Consistency</h2>
-        <p>In this implementation firebase assures that the views across all clients are consistent with the state of the application. Alternatively I can implement a scheme such that
-            each request if validated against the true state of the application, either an appropriate success for failure message is sent and the state of the view is updated with that of the application.
-            As the view contains data which would enable further actions to affect the state of the application, the view must be synced with the database.</p>
+        <p>
+            Eventual consistency refers to the period for nodes of a distributed system to become in sync with each other.
+            In this implementation, firebase assures that the views across all clients are consistent with the state of the application. Alternatively I can implement a scheme such that
+            each request from any client is validated against the true state of the application in the database, then an appropriate success for failure message is returned and the state of the view is updated with that of the database.
+            As the view contains data which would enable further actions to affect the state of the application, the view must be synced with the database.
+        </p>
     </div>
     <div class="container">
         <a class="btn btn-info" target="_blank" href="https://github.com/Snickdx/COMP6905">
             <span class="glyphicon icon-github"></span> View Code on GitHub
         </a>
         <a class="btn btn-info" target="_blank" href="https://github.com/Snickdx/COMP6905/archive/master.zip">
-            <span class="glyphicon icon-github"></span> Download
+            Download
         </a>
     </div>
+    <br>
 </div>
 
-<div class="container well" ng-controller="mainController">
-    <h2>Your Pending Requests</h2>
-    <div class="form-group row">
-        <label for="company"  class="col-sm-3 col-form-label" ng-model="input.company">Logged In As</label>
-        <div class="col-sm-3">
-            <select class="form-control" id="user" ng-model="input.user">
-                <option>John</option>
-                <option>Bill</option>
-            </select>
+<div class="container" ng-controller="mainController">
+    <h2>Application</h2>
+    <p>
+        The view only shows requests by the currently logged in user which are still in the sent stage. Although requests may be cancelled
+        or accepted, they are never deleted from the logs or firebase but simply flagged as such in the database and stored appropriately as events
+        in the event log. The cancelled or accepted requests are filtered out of the UI.
+    </p>
+    <div class="well">
+        <h3>Your Pending Requests</h3>
+        <div class="form-group row">
+            <label for="user"  class="col-sm-3 col-form-label">Logged In As</label>
+            <div class="col-sm-3">
+                <select class="form-control" ng-options="option for option in users" id="user" ng-model="input.user">
+                </select>
+            </div>
         </div>
-    </div>
 
-    <div class="row">
-        <div class="col-md-8">
-            <table class="table">
-                <thead>
-                <tr>
-                    <th>User</th>
-                    <th>Company</th>
-                    <th>Time</th>
-                    <th>Action</th>
-                </tr>
-                </thead>
+        <div class="row">
+            <div class="col-md-8">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Company</th>
+                        <th>Time</th>
+                        <th>Action</th>
+                    </tr>
+                    </thead>
 
-                <tbody ng-cloak>
+                    <tbody ng-cloak>
                     <tr ng-if="data.length == 0">
                         <td>No</td>
                         <td>Pending</td>
@@ -104,45 +128,48 @@
                         <td>{{print(parseInt(item.time))}}</td>
                         <td><input  type="button" value="Cancel" ng-click="cancel(item)" class="btn btn-danger"/></td>
                     </tr>
-                </tbody>
-            </table>
-        </div>
+                    </tbody>
+                </table>
+            </div>
 
-        <div class="col-md-4">
-            <form>
-                <div class="form-group row">
-                    <label for="time" class="col-sm-4 col-form-label">Time</label>
-                    <div>
-                        <div class="col-sm-4 col-xs-4">
-                            <input type="datetime" class="form-control" id="time" ng-model="input.time">
+            <div class="col-md-4">
+                <form>
+                    <div class="form-group row">
+                        <label for="time" class="col-sm-4 col-form-label">Time</label>
+                        <div>
+                            <div class="col-sm-4 col-xs-4">
+                                <input type="datetime" class="form-control" id="time" ng-model="input.time">
+                            </div>
+                            <div class= "col-sm-2 col-xs-4">
+                                <input type="button" class="btn btn-primary" value="ASAP" ng-click="now()"/>
+                            </div>
                         </div>
-                        <div class= "col-sm-2 col-xs-4">
-                            <input type="button" class="btn btn-primary" value="ASAP" ng-click="now()"/>
+
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="company"  class="col-sm-4 col-form-label" ng-model="input.company">Select Company</label>
+                        <div class="col-sm-7">
+                            <select class="form-control" ng-options="option for option in companies" id="company" ng-model="input.company">
+                            </select>
                         </div>
                     </div>
 
-                </div>
-
-                <div class="form-group row">
-                    <label for="company"  class="col-sm-4 col-form-label" ng-model="input.company">Select Company</label>
-                    <div class="col-sm-7">
-                        <select class="form-control" id="company" ng-model="input.company">
-                            <option>Hugh Jass Co.</option>
-                            <option>Harambe Ltd.</option>
-                        </select>
+                    <div class="form-group row">
+                        <div class="offset-sm-2 col-sm-10">
+                            <input type="button" class="btn btn-primary" value="Send Request" ng-click="send()"/>
+                        </div>
                     </div>
-                </div>
-
-                <div class="form-group row">
-                    <div class="offset-sm-2 col-sm-10">
-                        <input type="button" class="btn btn-primary" value="Send Request" ng-click="send()"/>
+                    <div class="form-group row">
+                        <div class="offset-sm-2 col-sm-10">
+                            <input type="button" class="btn btn-success" value="Refresh View From Logs" ng-click=""/>
+                        </div>
                     </div>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
 
-    <hr>
 
 </div> <!-- /container -->
 
