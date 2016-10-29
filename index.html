@@ -1,8 +1,5 @@
 <html>
-<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang=""> <![endif]-->
-<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8" lang=""> <![endif]-->
-<!--[if IE 8]>         <html class="no-js lt-ie9" lang=""> <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang=""> <!--<![endif]-->
+
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -20,10 +17,10 @@
     </style>
     <link rel="stylesheet" href="css/bootstrap-theme.min.css">
     <link rel="stylesheet" href="css/main.css">
-
+    <link rel="stylesheet" href="bower_components/angular-toastr/dist/angular-toastr.min.css">
     <script src="js/vendor/modernizr-2.8.3-respond-1.4.2.min.js"></script>
 </head>
-<body>
+<body ng-app="myApp">
 <!--[if lt IE 8]>
 <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
 <![endif]-->
@@ -57,44 +54,55 @@
     </div>
     <div class="container">
         <h2>Eventual Consistency</h2>
-        <p>The view updates right before and after data is sent to the database. As the view contains data which would enable further actions to affect the state of the application, the view must be synced with the database.</p>
+        <p>In this implementation firebase assures that the views across all clients are consistent with the state of the application. Alternatively I can implement a scheme such that
+            each request if validated against the true state of the application, either an appropriate success for failure message is sent and the state of the view is updated with that of the application.
+            As the view contains data which would enable further actions to affect the state of the application, the view must be synced with the database.</p>
+    </div>
+    <div class="container">
+        <a class="btn btn-info" target="_blank" href="https://github.com/Snickdx/COMP6905">
+            <span class="glyphicon icon-github"></span> View Code on GitHub
+        </a>
+        <a class="btn btn-info" target="_blank" href="https://github.com/Snickdx/COMP6905/archive/master.zip">
+            <span class="glyphicon icon-github"></span> Download
+        </a>
     </div>
 </div>
 
-<div class="container well">
+<div class="container well" ng-controller="mainController">
     <h2>Your Pending Requests</h2>
+    <div class="form-group row">
+        <label for="company"  class="col-sm-3 col-form-label" ng-model="input.company">Logged In As</label>
+        <div class="col-sm-3">
+            <select class="form-control" id="user" ng-model="input.user">
+                <option>John</option>
+                <option>Bill</option>
+            </select>
+        </div>
+    </div>
 
     <div class="row">
-
         <div class="col-md-8">
             <table class="table">
                 <thead>
                 <tr>
+                    <th>User</th>
                     <th>Company</th>
                     <th>Time</th>
                     <th>Action</th>
                 </tr>
                 </thead>
-                <tbody>
-                <?php
-//                $json_string = file_get_contents("http://localhost/A2backend/getView");
-                $json_string = file_get_contents("lol.json");
-                echo $json_string;
-                ?>
-                    <tr>
-                        <td>Harambe Ltd.</td>
-                        <td>8:00 PM</td>
-                        <td><button type="submit" class="btn btn-danger">Cancel</button></td>
+
+                <tbody ng-cloak>
+                    <tr ng-if="data.length == 0">
+                        <td>No</td>
+                        <td>Pending</td>
+                        <td>Requests</td>
                     </tr>
-                    <tr>
-                        <td>Hugh Jass Co.</td>
-                        <td>8:30 PM</td>
-                        <td><button type="submit" class="btn btn-danger">Cancel</button></td>
-                    </tr>
-                    <tr>
-                        <td>Hugh Jass Co.</td>
-                        <td>9:00 PM</td>
-                        <td><button type="submit" class="btn btn-danger">Cancel</button></td>
+                    <tr ng-repeat="item in data | filter: { user : input.user } " >
+                        <td>{{item.user}}</td>
+                        <td>{{item.company}}</td>
+                        <td>{{print(parseInt(item.time))}}</td>
+                        <td><input  type="button" value="Cancel" ng-click="cancel(item)" class="btn btn-danger"/></td>
                     </tr>
                 </tbody>
             </table>
@@ -104,15 +112,21 @@
             <form>
                 <div class="form-group row">
                     <label for="time" class="col-sm-4 col-form-label">Time</label>
-                    <div class="col-sm-8">
-                        <input type="time" class="form-control" id="time">
+                    <div>
+                        <div class="col-sm-4 col-xs-4">
+                            <input type="datetime" class="form-control" id="time" ng-model="input.time">
+                        </div>
+                        <div class= "col-sm-2 col-xs-4">
+                            <input type="button" class="btn btn-primary" value="ASAP" ng-click="now()"/>
+                        </div>
                     </div>
+
                 </div>
 
                 <div class="form-group row">
-                    <label for="company"  class="col-sm-4 col-form-label">Select Company</label>
-                    <div class="col-sm-8">
-                        <select class="form-control" id="company">
+                    <label for="company"  class="col-sm-4 col-form-label" ng-model="input.company">Select Company</label>
+                    <div class="col-sm-7">
+                        <select class="form-control" id="company" ng-model="input.company">
                             <option>Hugh Jass Co.</option>
                             <option>Harambe Ltd.</option>
                         </select>
@@ -121,7 +135,7 @@
 
                 <div class="form-group row">
                     <div class="offset-sm-2 col-sm-10">
-                        <button type="submit" class="btn btn-primary">Send Request</button>
+                        <input type="button" class="btn btn-primary" value="Send Request" ng-click="send()"/>
                     </div>
                 </div>
             </form>
@@ -142,10 +156,24 @@
 
 <script src="js/vendor/bootstrap.min.js"></script>
 
+<script src="bower_components/angular/angular.min.js"></script>
+
+<script src="bower_components/firebase/firebase.js"></script>
+
+<script src="bower_components/angularfire/dist/angularfire.min.js"></script>
+
+<script src="bower_components/angular-toastr/dist/angular-toastr.min.js"></script>
+
+<script src="bower_components/angular-toastr/dist/angular-toastr.tpls.min.js"></script>
+
 <script src="js/main.js"></script>
+
+<script src="bower_components/moment/min/moment.min.js"></script>
 
 <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
 <script>
+
+
     (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
             function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
         e=o.createElement(i);r=o.getElementsByTagName(i)[0];

@@ -16,6 +16,8 @@
         "monolog/monolog": "1.*",
         "slim/slim": "~2.0",
         "slim/views": "0.*",
-        "twig/twig": "1.*"
+        "twig/twig": "1.*",
+        "palanik/corsslim": "*",
+        "ktamas77/firebase-php": "dev-master"
     }
 }
