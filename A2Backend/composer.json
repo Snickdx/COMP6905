@@ -18,6 +18,13 @@
         "slim/views": "0.*",
         "twig/twig": "1.*",
         "palanik/corsslim": "*",
-        "ktamas77/firebase-php": "dev-master"
+        "ktamas77/firebase-php": "dev-master",
+        "microsoft/azure-storage": "*"
+    },
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://packages.firegento.com"
     }
+  ]
 }

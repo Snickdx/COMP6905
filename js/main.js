@@ -3,7 +3,9 @@
 
     var app = angular.module('myApp', ['firebase', 'toastr']);
 
-    var HOST = "http://snickdx.me/A2Backend/index.php";
+    // var HOST = "http://snickdx.me/A2Backend/index.php"; production
+
+    var HOST = "http://a2backend/";//local
 
     app.config(function(toastrConfig) {
         angular.extend(toastrConfig, {
