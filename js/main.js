@@ -5,7 +5,7 @@
 
     // var HOST = "http://snickdx.me/A2Backend/index.php"; production
 
-    var HOST = "http://a2backend/";//local
+    var HOST = "http://a2backend";//local
 
     app.config(function(toastrConfig) {
         angular.extend(toastrConfig, {
@@ -63,7 +63,7 @@
         $scope.data = $firebaseArray(db.ref("/requests/sent"));
 
         $scope.print = function(timestamp){
-            return moment(timestamp).format("MMM Do YY hh:mm:ss a");
+            return moment(timestamp*1000).format("MMM Do YY hh:mm:ss a");
         };
 
         $scope.now = function(){
@@ -91,6 +91,7 @@
                     console.log(data);
                     console.log(status);
                 });
+            $scope.getStream();
         };
 
         $scope.send = function(){
@@ -105,6 +106,54 @@
                     console.log(data);
                     console.log(status);
                     toastr.success('Success', 'Request Sent!');
+                })
+                .error(function(data, status){
+                    console.log(data);
+                    console.log(status);
+                });
+            $scope.getStream();
+        };
+
+        $scope.getStream = function(){
+            $http({
+                method:'GET',
+                url: HOST+'/getstream'
+            }).success(function(data){
+                $scope.logs = data;
+                console.log(data);
+            });
+        };
+
+        $scope.getStream();
+
+        $scope.refresh = function(){
+            $http({
+                method: 'POST',
+                url: HOST+"/playbackStream",
+                headers: {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'}
+            })
+                .success(function(data, status){
+                    console.log(data);
+                    console.log(status);
+                    toastr.success('The view is now up to date with the event stream', 'View Restored!');
+                })
+                .error(function(data, status){
+                    console.log(data);
+                    console.log(status);
+                });
+        };
+
+
+        $scope.destroy = function(){
+            $http({
+                method: 'POST',
+                url: HOST+"/destroyView",
+                headers: {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'}
+            })
+                .success(function(data, status){
+                    console.log(data);
+                    console.log(status);
+                    toastr.success('You can restore it by using the event logs', 'View destroyed!');
                 })
                 .error(function(data, status){
                     console.log(data);

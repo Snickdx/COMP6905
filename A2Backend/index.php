@@ -11,6 +11,8 @@ const DEFAULT_TOKEN = 'l97gPC93474K9eKvK6dLaw9HRerFjYmuc4dzxS4U';
 const DEFAULT_PATH = '/';
 const AZURE_STORAGE_KEY = 'G4VL0eFtlmXMxajh3gqwidvjR1+v5CIfPn6SaR+jKcahpcdTioqx+O60XJwj33GJ2hjSM/VThE54JW0GA2rnJQ==';
 const AZURE_ACCOUNT = 'snickdxstore';
+const AZURE_URL = 'https://snickdxstore.table.core.windows.net:443/EventStream?sv=2015-12-11&si=EventStream-15813D258AE&tn=eventstream&sig=4jhiVtkelDZyHVnUkFummSyJn14LLz6V1JpEdzuia8A%3D';
+const AZURE_QUERY_STRING = '?sv=2015-12-11&si=EventStream-15813D258AE&tn=eventstream&sig=4jhiVtkelDZyHVnUkFummSyJn14LLz6V1JpEdzuia8A%3D';
 
 
 use MicrosoftAzure\Storage\Common\ServicesBuilder;
@@ -30,6 +32,7 @@ function insertEntity($tableClient, $data, $action)
     $entity->addProperty("time", EdmType::STRING, $data['time']."");
     $entity->addProperty("company", EdmType::STRING, $data['company']);
     $entity->addProperty("action", EdmType::STRING, $action);
+    if($action == "delete")$entity->addProperty("key", EdmType::STRING, $data['key']);
 
     try{
         $tableClient->insertEntity("EventStream", $entity);
@@ -99,10 +102,11 @@ $app->post('/deleterequest', function () {
     $connectionString = 'DefaultEndpointsProtocol=https;AccountName='.AZURE_ACCOUNT.';AccountKey='.AZURE_STORAGE_KEY;
     $tableClient = ServicesBuilder::getInstance()->createTableService($connectionString);
     insertEntity($tableClient, ['user'=>$data->user, 'company'=>$data->company, 'time' => $data->time, 'key'=> $_POST['key']], "delete");
+    echo 'Delete Successful';
 
 });
 
-$app->get('/playbackStream', function(){
+$app->post('/playbackStream', function(){
     $firebase = new \Firebase\FirebaseLib(DEFAULT_URL, DEFAULT_TOKEN);
     $filter = "RowKey ne '3'";
     $connectionString = 'DefaultEndpointsProtocol=https;AccountName='.AZURE_ACCOUNT.';AccountKey='.AZURE_STORAGE_KEY;
@@ -119,23 +123,27 @@ $app->get('/playbackStream', function(){
     $entities = $result->getEntities();
 
     foreach($entities as $entity){
-//        $data = [
-//            "company" => $entity->company,
-//            "time" => intval($entity->time),
-//            "user" => $entity->user
-//        ];
-        echo print_r($entity);
-//        switch($entity->action){
-//            case "request":
-//                $firebase->push("/requests/sent", $data);
-//                break;
-//            case "delete":
-//                $firebase->delete("requests/sent/".$data->key);
-//                $firebase->set("requests/deleted/".$data->key, $data);
-//                break;
-//            default: echo "diff case";
-//        }
+        $data = [
+            "company" => $entity->getPropertyValue('company'),
+            "time" => intval($entity->getPropertyValue('time')),
+            "user" => $entity->getPropertyValue('user')
+        ];
+        switch($entity->getPropertyValue('action')){
+            case "request":
+                $firebase->push("/requests/sent", $data);
+                break;
+            case "delete":
+                $firebase->delete("requests/sent/".$entity->getPropertyValue('key'));
+                $firebase->set("requests/deleted/".$entity->getPropertyValue('key'), $data);
+                break;
+            default: echo "diff case";
+        }
     }
+});
+
+$app->post('/destroyView', function(){
+    $firebase = new \Firebase\FirebaseLib(DEFAULT_URL, DEFAULT_TOKEN);
+    $firebase->delete("requests/sent/");
 });
 
 $app->get('/getstream', function(){
@@ -154,10 +162,19 @@ $app->get('/getstream', function(){
 
     $entities = $result->getEntities();
 
-    var_dump($entities);
+    $arr = [];
 
-//    foreach($entities as $entity){
-//    }
+    foreach($entities as $entity){
+        $data = [
+            "company" => $entity->getPropertyValue('company'),
+            "time" => intval($entity->getPropertyValue('time')),
+            "user" => $entity->getPropertyValue('user'),
+            "action" => $entity->getPropertyValue('action')
+        ];
+        array_push($arr, $data);
+    }
+
+    echo json_encode($arr);
 });
 
 $app->post('/acceptrequest', function () {

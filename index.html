@@ -33,7 +33,7 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="#">COMP 6905 Assignment 2</a>
+            <a class="navbar-brand" href="#">811002795 COMP 6905 Assignment 2</a>
         </div>
     </div>
 </nav>
@@ -42,7 +42,12 @@
 <div class="panel">
     <div class="container">
         <h2>Scenario</h2>
-        <p>A web application for booking appointments, where users send booking requests to businesses who upon receipt can either accept or reject the booking. A user may cancel their request at any time before rejection.</p>
+        <p>A web application for booking appointments, where users send booking requests to businesses who upon receipt can either accept or reject the booking. A user may cancel their request at any time given that it has already not been rejected.</p>
+    </div>
+    <div class="container">
+        <h2>Event Sourcing</h2>
+        <p>I utilized the Azure table storage for storing events because the entire table can be queried for retrieving the eventstream and each entity is timestamped as well which helps with correctly ordering concurrent requests when replaying the stream.</p>
+        <img class="img-responsive" src="img/stream.png" alt="stream">
     </div>
     <div class="container">
         <h2>View Update Scheme</h2>
@@ -65,7 +70,10 @@
             | Bill | Fotomart Inc | 213434234 | cancelled |
             | Bill | Fotomart Inc | 213434234 | accepted  |
         </pre>
-
+        <p>
+            The view only shows currently pending requests to the user which is desired perspective for the user in this
+            use case. The UI allows for creating new requests and cancelling ones that have not yet been
+        </p>
     </div>
     <div class="container">
         <h2>Eventual Consistency</h2>
@@ -94,80 +102,100 @@
         or accepted, they are never deleted from the logs or firebase but simply flagged as such in the database and stored appropriately as events
         in the event log. The cancelled or accepted requests are filtered out of the UI.
     </p>
-    <div class="well">
-        <h3>Your Pending Requests</h3>
-        <div class="form-group row">
-            <label for="user"  class="col-sm-3 col-form-label">Logged In As</label>
-            <div class="col-sm-3">
-                <select class="form-control" ng-options="option for option in users" id="user" ng-model="input.user">
-                </select>
+    <div class="row">
+
+        <div class="well">
+            <h3>Your Pending Requests</h3>
+            <div class="form-group row">
+                <label for="user"  class="col-sm-3 col-form-label">Logged In As</label>
+                <div class="col-sm-3">
+                    <select class="form-control" ng-options="option for option in users" id="user" ng-model="input.user">
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Company</th>
+                            <th>Time</th>
+                            <th>Action</th>
+                        </tr>
+                        </thead>
+
+                        <tbody ng-cloak>
+                        <tr ng-if="data.length == 0">
+                            <td>No</td>
+                            <td>Pending</td>
+                            <td>Requests</td>
+                        </tr>
+                        <tr ng-repeat="item in data | filter: { user : input.user } " >
+                            <td>{{item.user}}</td>
+                            <td>{{item.company}}</td>
+                            <td>{{print(item.time)}}</td>
+                            <td><input  type="button" value="Cancel" ng-click="cancel(item)" class="btn btn-danger"/></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="col-md-4">
+                    <form>
+                        <div class="form-group row">
+                            <label for="time" class="col-sm-4 col-form-label">Time</label>
+                            <div>
+                                <div class="col-sm-4 col-xs-4">
+                                    <input type="datetime" class="form-control" id="time" ng-model="input.time">
+                                </div>
+                                <div class= "col-sm-2 col-xs-4">
+                                    <input type="button" class="btn btn-primary" value="ASAP" ng-click="now()"/>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="form-group row">
+                            <label for="company"  class="col-sm-4 col-form-label" ng-model="input.company">Select Company</label>
+                            <div class="col-sm-7">
+                                <select class="form-control" ng-options="option for option in companies" id="company" ng-model="input.company">
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row form-group">
+                            <div class="col-sm-offset-4 col-sm-10">
+                                <input type="button" class="btn btn-primary" value="Send Request" ng-click="send()"/>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
             </div>
         </div>
 
-        <div class="row">
-            <div class="col-md-8">
-                <table class="table">
-                    <thead>
-                    <tr>
-                        <th>User</th>
-                        <th>Company</th>
-                        <th>Time</th>
-                        <th>Action</th>
-                    </tr>
-                    </thead>
-
-                    <tbody ng-cloak>
-                    <tr ng-if="data.length == 0">
-                        <td>No</td>
-                        <td>Pending</td>
-                        <td>Requests</td>
-                    </tr>
-                    <tr ng-repeat="item in data | filter: { user : input.user } " >
-                        <td>{{item.user}}</td>
-                        <td>{{item.company}}</td>
-                        <td>{{print(parseInt(item.time))}} {{item.time}}</td>
-                        <td><input  type="button" value="Cancel" ng-click="cancel(item)" class="btn btn-danger"/></td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="col-md-4">
-                <form>
-                    <div class="form-group row">
-                        <label for="time" class="col-sm-4 col-form-label">Time</label>
-                        <div>
-                            <div class="col-sm-4 col-xs-4">
-                                <input type="datetime" class="form-control" id="time" ng-model="input.time">
-                            </div>
-                            <div class= "col-sm-2 col-xs-4">
-                                <input type="button" class="btn btn-primary" value="ASAP" ng-click="now()"/>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <div class="form-group row">
-                        <label for="company"  class="col-sm-4 col-form-label" ng-model="input.company">Select Company</label>
-                        <div class="col-sm-7">
-                            <select class="form-control" ng-options="option for option in companies" id="company" ng-model="input.company">
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-group row">
-                        <div class="offset-sm-2 col-sm-10">
-                            <input type="button" class="btn btn-primary" value="Send Request" ng-click="send()"/>
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <div class="offset-sm-2 col-sm-10">
-                            <input type="button" class="btn btn-success" value="Refresh View From Logs" ng-click=""/>
-                        </div>
-                    </div>
-                </form>
+        <div class="well">
+            <h3>Azure Storage Event Logs</h3>
+            <div class="row" ng-repeat="log in logs">
+                {{log | json}}
             </div>
         </div>
+    </div>
+
+    <div class="row form-group">
+
+
+        <div class="col-sm-6">
+            <input type="button" class="btn btn-danger col-sm-12" value="Destroy View" ng-click="destroy()"/>
+        </div>
+
+
+        <div class="col-sm-6">
+            <input type="button" class="btn btn-success col-sm-12" value="Refresh View From Logs" ng-click="refresh()"/>
+        </div>
+
     </div>
 
 
