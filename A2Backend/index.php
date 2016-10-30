@@ -95,8 +95,69 @@ $app->post('/deleterequest', function () {
      $data = $firebase->get("requests/sent/".$_POST['key']);
      $firebase->delete("requests/sent/".$_POST['key']);
      $firebase->set("requests/deleted/".$_POST['key'], $data);
+    $data = json_decode($data);
+    $connectionString = 'DefaultEndpointsProtocol=https;AccountName='.AZURE_ACCOUNT.';AccountKey='.AZURE_STORAGE_KEY;
+    $tableClient = ServicesBuilder::getInstance()->createTableService($connectionString);
+    insertEntity($tableClient, ['user'=>$data->user, 'company'=>$data->company, 'time' => $data->time, 'key'=> $_POST['key']], "delete");
 
+});
 
+$app->get('/playbackStream', function(){
+    $firebase = new \Firebase\FirebaseLib(DEFAULT_URL, DEFAULT_TOKEN);
+    $filter = "RowKey ne '3'";
+    $connectionString = 'DefaultEndpointsProtocol=https;AccountName='.AZURE_ACCOUNT.';AccountKey='.AZURE_STORAGE_KEY;
+    $tableClient = ServicesBuilder::getInstance()->createTableService($connectionString);
+
+    try {
+        $result = $tableClient->queryEntities("EventStream", $filter);
+    } catch(ServiceException $e){
+        $code = $e->getCode();
+        $error_message = $e->getMessage();
+        echo $code.": ".$error_message.PHP_EOL;
+    }
+
+    $entities = $result->getEntities();
+
+    foreach($entities as $entity){
+//        $data = [
+//            "company" => $entity->company,
+//            "time" => intval($entity->time),
+//            "user" => $entity->user
+//        ];
+        echo print_r($entity);
+//        switch($entity->action){
+//            case "request":
+//                $firebase->push("/requests/sent", $data);
+//                break;
+//            case "delete":
+//                $firebase->delete("requests/sent/".$data->key);
+//                $firebase->set("requests/deleted/".$data->key, $data);
+//                break;
+//            default: echo "diff case";
+//        }
+    }
+});
+
+$app->get('/getstream', function(){
+
+    $filter = "RowKey ne '3'";
+    $connectionString = 'DefaultEndpointsProtocol=https;AccountName='.AZURE_ACCOUNT.';AccountKey='.AZURE_STORAGE_KEY;
+    $tableClient = ServicesBuilder::getInstance()->createTableService($connectionString);
+
+    try {
+        $result = $tableClient->queryEntities("EventStream", $filter);
+    } catch(ServiceException $e){
+        $code = $e->getCode();
+        $error_message = $e->getMessage();
+        echo $code.": ".$error_message.PHP_EOL;
+    }
+
+    $entities = $result->getEntities();
+
+    var_dump($entities);
+
+//    foreach($entities as $entity){
+//    }
 });
 
 $app->post('/acceptrequest', function () {

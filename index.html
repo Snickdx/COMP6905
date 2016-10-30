@@ -125,7 +125,7 @@
                     <tr ng-repeat="item in data | filter: { user : input.user } " >
                         <td>{{item.user}}</td>
                         <td>{{item.company}}</td>
-                        <td>{{print(parseInt(item.time))}}</td>
+                        <td>{{print(parseInt(item.time))}} {{item.time}}</td>
                         <td><input  type="button" value="Cancel" ng-click="cancel(item)" class="btn btn-danger"/></td>
                     </tr>
                     </tbody>
