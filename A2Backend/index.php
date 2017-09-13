@@ -43,7 +43,13 @@ function insertEntity($tableClient, $data, $action)
     }
 }
 
-$app = new \Slim\Slim();
+$logwriter = new \Amenadiel\SlimPHPConsole\PHPConsoleWriter(true);
+
+$app = new \Slim\Slim(array(
+    'log.enabled' => true,
+    'log.level' => \Slim\Log::DEBUG,
+    'log.writer' => $logwriter
+));
 
 $app->add(new \CorsSlim\CorsSlim());
 
@@ -74,6 +80,11 @@ $app->get('/requests', function () {
 
 $app->get('/', function () {
     echo 'Hi :)';
+});
+
+$app->post('/receiveTrans', function(){
+    $_POST = json_decode(file_get_contents('php://input'), true);
+    echo(json_encode($_POST));
 });
 
 $app->post('/sendrequest', function () {

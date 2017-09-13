@@ -19,7 +19,8 @@
         "twig/twig": "1.*",
         "palanik/corsslim": "*",
         "ktamas77/firebase-php": "dev-master",
-        "microsoft/azure-storage": "*"
+        "microsoft/azure-storage": "*",
+        "amenadiel/slim-phpconsole":"~0.0.4"
     },
   "repositories": [
     {
